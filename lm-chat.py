@@ -228,6 +228,11 @@ def main():
     parser = argparse.ArgumentParser(
         description="Chat with local models (docker model runner by default)."
     )
+    parser.add_argument(
+        "--url",
+        default="http://127.0.0.1:12434/engines/llama.cpp/v1",
+        help="Base URL for the model API (default: %(default)s)",
+    )
     subparsers = parser.add_subparsers(dest="command")
 
     subparsers.add_parser("list", help="List available models")
@@ -244,7 +249,6 @@ def main():
     )
 
     args = parser.parse_args()
-    args.url = "http://127.0.0.1:12434/engines/llama.cpp/v1"
     args.prefix = "> "
     args.color = "auto"
     if chat(args):
