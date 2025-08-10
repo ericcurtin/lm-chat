@@ -11,13 +11,19 @@ import time
 import urllib.error
 import urllib.request
 
+try:
+    from harmony_parser import HarmonyParser
+    HARMONY_AVAILABLE = True
+except ImportError:
+    HARMONY_AVAILABLE = False
+
 
 def should_colorize():
     t = os.getenv("TERM")
     return t and t != "dumb" and sys.stdout.isatty()
 
 
-def res(response, color):
+def res(response, color, harmony_mode=False):
     color_default = ""
     color_yellow = ""
     if (color == "auto" and should_colorize()) or color == "always":
@@ -43,6 +49,54 @@ def res(response, color):
                 assistant_response += choice
 
     print("")
+    
+    # If harmony mode is enabled and parser is available, parse and display
+    if harmony_mode and HARMONY_AVAILABLE and assistant_response:
+        try:
+            parser = HarmonyParser()
+            messages = parser.parse_conversation(assistant_response)
+            
+            if messages:
+                print("\n" + "="*50)
+                print("HARMONY PARSED OUTPUT:")
+                print("="*50)
+                
+                # Show user-facing content
+                user_facing = parser.extract_user_facing(messages)
+                if user_facing:
+                    print("\nUSER-FACING CONTENT:")
+                    print("-" * 30)
+                    for message in user_facing:
+                        role_display = message.role.value.capitalize()
+                        if message.channel:
+                            role_display += f" ({message.channel.value})"
+                        print(f"{role_display}: {message.content}")
+                        
+                        for tool_call in message.tool_calls:
+                            print(f"  [Tool Call: {tool_call['name']}]")
+                
+                # Show reasoning if present
+                reasoning = parser.extract_reasoning(messages)
+                if reasoning:
+                    print("\nREASONING CHAIN:")
+                    print("-" * 30)
+                    for message in reasoning:
+                        print(f"Analysis: {message.content}")
+                
+                # Show tool calls if present
+                tool_calls = parser.extract_tool_calls(messages)
+                if tool_calls:
+                    print("\nTOOL CALLS:")
+                    print("-" * 30)
+                    for i, tool in enumerate(tool_calls, 1):
+                        print(f"{i}. {tool['tool_name']}")
+                        print(f"   From: {tool['message_role']} ({tool['message_channel']})")
+                        print(f"   Parameters: {tool['parameters']}")
+                
+                print("="*50)
+        except Exception as e:
+            print(f"\nHarmony parsing error: {e}")
+    
     return assistant_response
 
 
@@ -156,7 +210,7 @@ class RamaLamaShell(cmd.Cmd):
                 i = min(i * 2, 0.1)
 
         if response:
-            return res(response, self.args.color)
+            return res(response, self.args.color, getattr(self.args, 'harmony', False))
 
         # Only show error and kill if not in initial connection phase
         if not getattr(self.args, "initial_connection", False):
@@ -241,6 +295,10 @@ def main():
     )
     parser_run.add_argument(
         "ARGS", nargs="*", help="overrides the default prompt, and the output is returned without entering the chatbot"
+    )
+    parser_run.add_argument(
+        "--harmony", action="store_true", 
+        help="Enable harmony format parsing for gpt-oss models"
     )
 
     args = parser.parse_args()
