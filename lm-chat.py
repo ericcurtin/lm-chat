@@ -193,7 +193,7 @@ def alarm_handler(signum, frame):
 
 
 def chat(args):
-    list_models = args.command == "list"
+    list_models = args.command == "list" or args.command == "ls"
     if list_models:
         url = f"{args.url}/models"
         headers = add_api_key(args)
@@ -235,7 +235,7 @@ def main():
     )
     subparsers = parser.add_subparsers(dest="command")
 
-    subparsers.add_parser("list", help="List available models")
+    subparsers.add_parser("list", aliases=["ls"], help="List available models")
 
     parser_run = subparsers.add_parser(
         "run", help="Run interactive chat with a model"
