@@ -228,10 +228,27 @@ def main():
     parser = argparse.ArgumentParser(
         description="Chat with local models (docker model runner by default)."
     )
-    parser.add_argument(
+    
+    # Create mutually exclusive group for URL options
+    url_group = parser.add_mutually_exclusive_group()
+    url_group.add_argument(
         "--url",
-        default="http://127.0.0.1:12434/engines/llama.cpp/v1",
-        help="Base URL for the model API (default: %(default)s)",
+        help="Base URL for the model API",
+    )
+    url_group.add_argument(
+        "--dmr",
+        action="store_true",
+        help="Use docker model runner (default: http://127.0.0.1:12434/engines/llama.cpp/v1)",
+    )
+    url_group.add_argument(
+        "--llamacpp",
+        action="store_true", 
+        help="Use llama.cpp server (default: http://127.0.0.1:8080/v1)",
+    )
+    url_group.add_argument(
+        "--ollama",
+        action="store_true",
+        help="Use ollama server (default: http://127.0.0.1:11434/v1)",
     )
     subparsers = parser.add_subparsers(dest="command")
 
@@ -249,6 +266,19 @@ def main():
     )
 
     args = parser.parse_args()
+    
+    # Set URL based on selected option
+    if args.url:
+        # Custom URL provided
+        pass  # args.url already set
+    elif args.llamacpp:
+        args.url = "http://127.0.0.1:8080/v1"
+    elif args.ollama:
+        args.url = "http://127.0.0.1:11434/v1"
+    else:
+        # Default to docker model runner (--dmr behavior)
+        args.url = "http://127.0.0.1:12434/engines/llama.cpp/v1"
+    
     args.prefix = "> "
     args.color = "auto"
     if chat(args):
