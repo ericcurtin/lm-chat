@@ -29,17 +29,18 @@ def res(response, color):
     for line in response:
         line = line.decode("utf-8").strip()
         if line.startswith("data: {"):
-            line = line[len("data: ") :]
-            choice = json.loads(line)["choices"][0]["delta"]
+            choice = ""
+
+            json_line = json.loads(line[len("data: ") :])
+            if "choices" in json_line and json_line["choices"]:
+                choice = json_line["choices"][0]["delta"]
             if "content" in choice:
                 choice = choice["content"]
             else:
                 continue
 
             if choice:
-                print(
-                    f"{color_yellow}{choice}{color_default}", end="", flush=True
-                )
+                print(f"{color_yellow}{choice}{color_default}", end="", flush=True)
                 assistant_response += choice
 
     print("")
