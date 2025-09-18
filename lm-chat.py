@@ -61,7 +61,7 @@ def add_api_key(args, headers=None):
     return headers
 
 
-class RamaLamaShell(cmd.Cmd):
+class LmChatShell(cmd.Cmd):
     def __init__(self, args):
         super().__init__()
         self.conversation_history = []
@@ -208,7 +208,7 @@ def chat(args):
         return 1
 
     try:
-        shell = RamaLamaShell(args)
+        shell = LmChatShell(args)
         if not list_models:
             if shell.handle_args():
                 return 0
