@@ -45,13 +45,13 @@ type ModelsResponse struct {
 }
 
 type Args struct {
-	URL      string
-	Model    string
-	Command  string
+	URL        string
+	Model      string
+	Command    string
 	PromptArgs []string
-	Prefix   string
-	Color    string
-	APIKey   string
+	Prefix     string
+	Color      string
+	APIKey     string
 }
 
 var spinnerChars = []string{"⠋", "⠙", "⠹", "⠸", "⠼", "⠴", "⠦", "⠧", "⠇", "⠏"}
@@ -93,7 +93,7 @@ func printResponse(resp *http.Response, color string) (string, error) {
 	fmt.Print("\r")
 	assistantResponse := ""
 	scanner := bufio.NewScanner(resp.Body)
-	
+
 	for scanner.Scan() {
 		line := strings.TrimSpace(scanner.Text())
 		if strings.HasPrefix(line, "data: {") {
@@ -112,11 +112,11 @@ func printResponse(resp *http.Response, color string) (string, error) {
 		}
 	}
 	fmt.Println()
-	
+
 	if err := scanner.Err(); err != nil {
 		return assistantResponse, err
 	}
-	
+
 	return assistantResponse, nil
 }
 
@@ -135,20 +135,20 @@ func makeRequest(args *Args, conversationHistory []Message) (string, error) {
 	}
 
 	url := args.URL + "/chat/completions"
-	
+
 	// Retry logic with spinner
 	sleepTime := 0.01
 	totalTimeSlept := 0.0
 	maxTimeout := 16.0
 	spinnerIdx := 0
-	
+
 	var resp *http.Response
 	for {
 		req, err := http.NewRequest("POST", url, bytes.NewBuffer(jsonData))
 		if err != nil {
 			return "", err
 		}
-		
+
 		headers := map[string]string{
 			"Content-Type": "application/json",
 		}
@@ -161,16 +161,16 @@ func makeRequest(args *Args, conversationHistory []Message) (string, error) {
 		if err == nil {
 			break
 		}
-		
+
 		if isTerminal(os.Stdout) {
 			fmt.Print("\r" + spinnerChars[spinnerIdx%len(spinnerChars)])
 			spinnerIdx++
 		}
-		
+
 		if totalTimeSlept > maxTimeout {
 			break
 		}
-		
+
 		time.Sleep(time.Duration(sleepTime * float64(time.Second)))
 		totalTimeSlept += sleepTime
 		sleepTime = min(sleepTime*2, 0.1)
@@ -216,13 +216,13 @@ func listModels(args *Args) error {
 }
 
 type model struct {
-	args                 *Args
-	conversationHistory  []Message
-	input                string
-	cursorPos            int
-	err                  error
-	quitting             bool
-	waitingForResponse   bool
+	args                *Args
+	conversationHistory []Message
+	input               string
+	cursorPos           int
+	err                 error
+	quitting            bool
+	waitingForResponse  bool
 }
 
 type responseMsg struct {
@@ -270,28 +270,28 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				m.quitting = true
 				return m, tea.Quit
 			}
-			
+
 			userInput := m.input
 			m.input = ""
 			m.cursorPos = 0
 			m.waitingForResponse = true
-			
+
 			return m, func() tea.Msg {
 				m.conversationHistory = append(m.conversationHistory, Message{
 					Role:    "user",
 					Content: userInput,
 				})
-				
+
 				response, err := makeRequest(m.args, m.conversationHistory)
 				if err != nil {
 					return responseMsg{err: err}
 				}
-				
+
 				m.conversationHistory = append(m.conversationHistory, Message{
 					Role:    "assistant",
 					Content: response,
 				})
-				
+
 				return responseMsg{content: response}
 			}
 		case tea.KeyBackspace:
@@ -344,30 +344,30 @@ func handleDirectPrompt(args *Args, prompt string) error {
 	conversationHistory := []Message{
 		{Role: "user", Content: prompt},
 	}
-	
+
 	response, err := makeRequest(args, conversationHistory)
 	if err != nil {
 		return err
 	}
-	
+
 	_ = response // Response already printed
 	return nil
 }
 
 func chat(args *Args) error {
 	listModelsCmd := args.Command == "list" || args.Command == "ls"
-	
+
 	if listModelsCmd {
 		return listModels(args)
 	}
-	
+
 	if args.Command != "run" {
 		return fmt.Errorf("invalid command")
 	}
 
 	// Handle direct prompting
 	prompt := strings.Join(args.PromptArgs, " ")
-	
+
 	// Check for stdin input
 	if !isTerminal(os.Stdin) {
 		stdinBytes, err := io.ReadAll(os.Stdin)
@@ -392,11 +392,11 @@ func chat(args *Args) error {
 	if err != nil {
 		return err
 	}
-	
+
 	if finalModel, ok := m.(model); ok && finalModel.err != nil {
 		return finalModel.err
 	}
-	
+
 	return nil
 }
 
