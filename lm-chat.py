@@ -251,6 +251,11 @@ def main():
         action="store_true",
         help="Use ollama server (default: http://127.0.0.1:11434/v1)",
     )
+    url_group.add_argument(
+        "--openrouter",
+        action="store_true",
+        help="Use openrouter server (default: https://openrouter.ai/api/v1)",
+    )
     subparsers = parser.add_subparsers(dest="command")
 
     subparsers.add_parser("list", aliases=["ls"], help="List available models")
@@ -276,6 +281,8 @@ def main():
         args.url = "http://127.0.0.1:8080/v1"
     elif args.ollama:
         args.url = "http://127.0.0.1:11434/v1"
+    elif args.openrouter:
+        args.url = "https://openrouter.ai/api/v1"
     else:
         # Default to docker model runner (--dmr behavior)
         args.url = "http://127.0.0.1:12434/engines/llama.cpp/v1"
