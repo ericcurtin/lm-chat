@@ -1,0 +1,6 @@
+# Binaries
+lm-chat
+
+# Go build artifacts
+*.test
+*.out
