@@ -9,6 +9,7 @@ import (
 	"io"
 	"net/http"
 	"os"
+	"os/signal"
 	"strings"
 	"syscall"
 	"time"
@@ -257,6 +258,19 @@ func (s *LmChatShell) request() string {
 }
 
 func (s *LmChatShell) loop() {
+	// Set up signal handling for Ctrl+C
+	sigChan := make(chan os.Signal, 1)
+	signal.Notify(sigChan, os.Interrupt, syscall.SIGTERM)
+
+	go func() {
+		for range sigChan {
+			fmt.Println()
+			if !s.requestInProcess {
+				fmt.Println("Use Ctrl + d or /bye or exit to quit.")
+			}
+		}
+	}()
+
 	reader := bufio.NewReader(os.Stdin)
 	for {
 		s.requestInProcess = false
